@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'quiz.dart';
+import 'package:mukut/pages/settings.dart';
+import 'voting.dart';
 import 'rankings.dart';
-import 'user.dart';
-
+import 'package:mukut/widgets/phone_wrapper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,16 +19,16 @@ class _HomePageState extends State<HomePage> {
     Widget page;
     switch (selectedIndex) {
       case 0:
-        page = QuizPage();
+        page = VotingPage();
       case 1:
         page = RankingsPage();
       case 2:
-        page = UserSettingsPage();
+        page = SettingsPage();
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
     return Scaffold(
-      body: Container(
+      body: PhoneSizedContainer(
         child: page,
       ),
       bottomNavigationBar: SafeArea(

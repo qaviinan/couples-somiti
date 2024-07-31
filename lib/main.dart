@@ -6,9 +6,9 @@ import 'package:provider/provider.dart';
 // import 'src/settings/settings_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'pages/quiz.dart';
+
 import 'pages/home.dart';
-import 'pages/rankings.dart';
+import 'pages/voting.dart';
 import 'app_state.dart';
 
 void main() async {

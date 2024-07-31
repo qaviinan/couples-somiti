@@ -1,138 +1,158 @@
-import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../app_state.dart';
-import 'candidate_data.dart';
-import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:csv/csv.dart';
 
-class RankingsPage extends StatefulWidget {
-  @override
-  State<RankingsPage> createState() => _RankingsPageState();
-}
+// class UserSettingsPage extends StatefulWidget {
+//   const UserSettingsPage({super.key});
 
-class _RankingsPageState extends State<RankingsPage> {
-  final _random = Random();
-  List<Politician> _politicians = [];
+//   @override
+//   State<UserSettingsPage> createState() => _UserSettingsPageState();
+// }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadPoliticians();
-  }
+// class _UserSettingsPageState extends State<UserSettingsPage> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return const Placeholder();
+//   }
+// }
 
-  Future<void> _loadPoliticians() async {
-    await PoliticianData().loadCsvData();
-    setState(() {
-      _politicians = PoliticianData().politicians;
-    });
-  }
-
-  // Politician _getRandomPolitician() {
-  //   final politicians = PoliticianData().politicians;
-  //   return politicians[_random.nextInt(politicians.length)];
-  // }
-
+class RankingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        child: _politicians.isEmpty
-            ? Center(child: CircularProgressIndicator())
-            : CardSwiper(
-                cardsCount: _politicians.length,
-                cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
-                  return Container(
-                    width: double.infinity,
-                    child: PoliticianCard(
-                      politician: _politicians[index],
-                      onLike: () {
-                        // Handle like action
-                      },
-                    ),
-                  );
-                },
-              ),
+      appBar: AppBar(
+        title: Text('Politicians Page'),
       ),
+body: FutureBuilder<List<Politician>>(
+        future: loadCsvData(),
+        builder: (context, snapshot) {
+          print('Snapshot state: ${snapshot.connectionState}');  // Debug statement
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            print('Error: ${snapshot.error}');  // Debug statement
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          final politicians = snapshot.data ?? [];
+          print('Number of politicians: ${politicians.length}');  // Debug statement
+
+          if (politicians.isEmpty) {
+            return Center(child: Text('No data found'));  // Handle empty state
+          }
+
+          return ListView.builder(
+            itemCount: politicians.length,
+            itemBuilder: (context, index) {
+              final politician = politicians[index];
+              return PoliticianItem(
+                name: politician.name,
+                age: politician.age,
+                party: politician.party,
+                location: politician.location,
+                photo: politician.photo,
+                shortBio: politician.shortBio,
+              );
+            },
+          );
+        },
+      )
     );
   }
 }
 
-class PoliticianCard extends StatelessWidget {
-  final Politician politician;
-  final VoidCallback onLike;
+class PoliticianItem extends StatelessWidget {
+  final String name;
+  final int age;
+  final String party;
+  final String location;
+  final String photo;
+  final String shortBio;
 
-  const PoliticianCard({
-    required this.politician,
-    required this.onLike,
+  const PoliticianItem({
+    required this.name,
+    required this.age,
+    required this.party,
+    required this.location,
+    required this.photo,
+    required this.shortBio,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SizedBox(
-          width: double.infinity,
-          child: Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0),
-            ),
-            color: Colors.white,
-            elevation: 5,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  height: 300, // Fixed height for the image
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(15.0)),
-                    image: DecorationImage(
-                      image: NetworkImage(politician.photo),
-                      fit: BoxFit.cover,
-                      onError: (error, stackTrace) {
-                        print('Failed to load image: $error');
-                      },
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        politician.name,
-                        style: Theme.of(context).textTheme.headlineLarge,
-                      ),
-                      Wrap(
-                        spacing: 8.0,
-                        children: [
-                          Chip(
-                            label: Text(politician.location),
-                            backgroundColor: Colors.blueAccent,
-                          ),
-                          Chip(
-                            label: Text(politician.party),
-                            backgroundColor: Colors.greenAccent,
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 10),
-                      ElevatedButton.icon(
-                        onPressed: onLike,
-                        icon: Icon(Icons.thumb_up),
-                        label: Text('Like'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+    print('Building item for $name');  // Debug statement
+    return Card(
+      child: ListTile(
+        leading: Image.network(photo, errorBuilder: (context, error, stackTrace) {
+          return Icon(Icons.error);  // Handle image loading error
+        }),
+        title: Text(name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Age: $age'),
+            Text('Party: $party'),
+            Text('Location: $location'),
+            Text('Bio: $shortBio'),
+          ],
         ),
       ),
     );
   }
 }
 
+class Politician {
+  final String name;
+  final int age;
+  final String party;
+  final String location;
+  final String photo;
+  final String shortBio;
+
+  Politician({
+    required this.name,
+    required this.age,
+    required this.party,
+    required this.location,
+    required this.photo,
+    required this.shortBio,
+  });
+  
+  factory Politician.fromCsv(List<dynamic> csvRow) {
+    return Politician(
+      name: csvRow[0] as String,
+      age: int.parse(csvRow[1].toString()), // Explicitly convert to int
+      party: csvRow[2] as String,
+      location: csvRow[3] as String,
+      photo: csvRow[4] as String,
+      shortBio: csvRow[5] as String,
+    );
+  }
+}
+
+
+Future<List<Politician>> loadCsvData() async {
+  final data = await rootBundle.loadString('assets/people.csv');
+  print('CSV Data: $data'); // Debug statement
+
+  // Convert the CSV data into a list of rows
+  final csvTable = CsvToListConverter(eol: "\n").convert(data);
+  
+  // Print each row for debugging
+  for (var row in csvTable) {
+    print('Row: $row');
+  }
+
+  // Skip the header row and parse each remaining row
+  final politicians = csvTable
+      // .skip(1) // Skip the header row
+      .map((csvRow) => Politician.fromCsv(csvRow))
+      .toList();
+
+  print('Parsed Politicians: $politicians'); // Debug statement
+  return politicians;
+}
